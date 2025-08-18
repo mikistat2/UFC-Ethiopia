@@ -169,6 +169,14 @@ const EventsSection = React.forwardRef(function EventsSection(props, ref) {
         setMmaEvents(withCached);
         // After setting, fetch missing images
         hydrateImagesForList(setMmaEvents, () => withCached);
+        // Save events to backend
+        if (withCached.length > 0) {
+          fetch('http://localhost:5000/api/save-events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ events: withCached.map(ev => ({ id: ev.id, name: ev.title })) })
+          });
+        }
       } catch (err) {
         setError('Failed to load events.');
         setMmaEvents([]);
@@ -250,8 +258,17 @@ const EventsSection = React.forwardRef(function EventsSection(props, ref) {
     setLoading(false);
   };
 
-  const handleWatch = () => {
-    // Example: navigate to /watch or show a modal
+  const handleView = async (event) => {
+    // Save event to backend (ensure id and name)
+    await fetch('http://localhost:5000/api/save-events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ events: [{ id: event.id, name: event.title }] })
+    });
+    // Store event info for WatchPage
+    localStorage.setItem('ufc_selected_event_id', event.id);
+    localStorage.setItem('ufc_selected_event_name', event.title);
+    // Redirect to live section (watch page)
     window.location.href = '/watch';
   };
 
@@ -313,7 +330,7 @@ const EventsSection = React.forwardRef(function EventsSection(props, ref) {
               </div>
             </div>
             <div className="flex gap-4 mt-4">
-              <button onClick={handleWatch} className="bg-blue-600 text-white px-4 py-2 rounded-full font-headline text-sm shadow hover:bg-blue-800 transition-colors">Watch</button>
+              <button onClick={() => handleView(event)} className="bg-green-600 text-white px-4 py-2 rounded-full font-headline text-sm shadow hover:bg-green-800 transition-colors">View</button>
             </div>
           </motion.div>
         ))}
@@ -357,7 +374,7 @@ const EventsSection = React.forwardRef(function EventsSection(props, ref) {
               </div>
             </div>
             <div className="flex gap-4 mt-2">
-              <button onClick={handleWatch} className="bg-blue-600 text-white px-4 py-2 rounded-full font-headline text-sm shadow hover:bg-blue-800 transition-colors">Watch</button>
+              <button onClick={() => handleView(event)} className="bg-blue-600 text-white px-4 py-2 rounded-full font-headline text-sm shadow hover:bg-blue-800 transition-colors">Watch</button>
             </div>
           </motion.div>
         ))}

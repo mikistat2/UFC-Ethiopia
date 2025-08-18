@@ -1,14 +1,33 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { login } from '../api';
+
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || '/events';
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Add login logic here
-    alert('Login submitted!');
+    setError('');
+    setSuccess('');
+    try {
+      const res = await login(email, password);
+      setSuccess('Login successful! Redirecting...');
+  localStorage.setItem('ufc_nickname', res.user.nickname);
+  localStorage.setItem('ufc_user_id', res.user.id);
+      setTimeout(() => navigate(from, { replace: true }), 1200);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Login failed.');
+    }
   };
 
   return (
@@ -21,6 +40,8 @@ export default function LoginPage() {
       >
         <h2 className="font-headline text-3xl text-ufcRed mb-6 text-center">Login to UFC Ethiopia</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && <div className="text-red-500 text-center">{error}</div>}
+          {success && <div className="text-green-500 text-center">{success}</div>}
           <input
             type="email"
             placeholder="Email"
@@ -45,8 +66,12 @@ export default function LoginPage() {
             Login
           </motion.button>
         </form>
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center flex flex-col gap-2">
           <a href="#" className="text-ufcRed hover:underline">Forgot password?</a>
+          <span className="text-gray-400">
+            Don't have an account?{' '}
+            <a href="/signup" className="text-ufcRed hover:underline">Sign up</a>
+          </span>
         </div>
       </motion.div>
     </section>

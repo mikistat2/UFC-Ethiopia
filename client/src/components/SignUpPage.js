@@ -1,6 +1,8 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { register } from '../api';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -9,19 +11,34 @@ export default function SignUpPage() {
   const [nickname, setNickname] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setSuccess('');
     if (password !== confirm) {
-      alert('Passwords do not match!');
+      setError('Passwords do not match!');
       return;
     }
     if (!nickname.trim()) {
-      alert('Please enter a nickname!');
+      setError('Please enter a nickname!');
       return;
     }
-  localStorage.setItem('ufc_nickname', nickname.trim());
-  // Redirect to dedicated events page
-  navigate('/events');
+    try {
+      const res = await register(email, password, nickname.trim());
+      setSuccess('Registration successful! Redirecting...');
+      localStorage.setItem('ufc_nickname', nickname.trim());
+      // Save user id if returned (future-proof, not currently returned by register)
+      if (res.user && res.user.id) {
+        localStorage.setItem('ufc_user_id', res.user.id);
+      }
+      setTimeout(() => navigate('/events'), 1200);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Registration failed.');
+    }
   };
 
   return (
@@ -34,6 +51,8 @@ export default function SignUpPage() {
       >
         <h2 className="font-headline text-3xl text-ufcRed mb-6 text-center">Sign Up for UFC Ethiopia</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {error && <div className="text-red-500 text-center">{error}</div>}
+          {success && <div className="text-green-500 text-center">{success}</div>}
           <input
             type="email"
             placeholder="Email"
