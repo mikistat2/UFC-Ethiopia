@@ -181,13 +181,13 @@ app.post('/api/comments', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
   try {
-    await db.query(
-      'INSERT INTO comments (user_id, event_id, event_name, nickname, body) VALUES ($1, $2, $3, $4, $5)',
+    const result = await db.query(
+      'INSERT INTO comments (user_id, event_id, event_name, nickname, body) VALUES ($1, $2, $3, $4, $5) RETURNING *',
       [userId, eventId, eventName, nickname, body]
     );
-    // Broadcast new comment to all clients
-    io.emit('new-comment', { userId, eventId, eventName, nickname, body });
-    res.json({ success: true, message: 'Comment posted.' });
+    const newComment = result.rows[0];
+    io.emit('new-comment', newComment);
+    res.json({ success: true, message: 'Comment posted.', comment: newComment });
   } catch (error) {
     console.error(error.message);
     res.status(500).json({ error: 'Failed to post comment.' });
